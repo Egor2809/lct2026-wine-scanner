@@ -1,0 +1,4 @@
+# Дообучение (scripts/train_lora.py, scripts/train_label_detector.py,
+# scripts/train_query_head.py). Сервису не нужно.
+#   pip install -r requirements.txt -r requirements-train.txt -c constraints.txt
+albumentations==2.0.8

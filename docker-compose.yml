@@ -1,0 +1,13 @@
+services:
+  scanner:
+    build: .
+    image: wine-scanner:latest
+    # Платформа не задана: образ собирается под процессор машины. Принудительный
+    # amd64 на Apple Silicon шёл через эмуляцию (p95 6 с при таймауте скрипта 10 с).
+    ports:
+      - "${HOST_PORT:-8080}:8080"
+    # YANDEX_API_KEY и YANDEX_FOLDER_ID. Нет .env — «в контуре»: локальный RapidOCR.
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped

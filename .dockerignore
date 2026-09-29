@@ -1,0 +1,16 @@
+# Белый список: в контекст сборки попадает только то, что нужно сервису.
+# Без него Docker тащит .venv и 2 ГБ фото каталога.
+*
+!src/
+!scripts/
+!config/
+!frontend/
+!requirements.txt
+!constraints.txt
+!data/catalog.csv
+!data/catalog_thumbs/
+!artifacts/index.npz
+!artifacts/geometric_sift.npz
+!artifacts/models/
+**/__pycache__
+**/.DS_Store

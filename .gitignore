@@ -1,0 +1,34 @@
+.env
+# data/* (а не data/) — иначе git не даст вернуть фикстуру исключением ниже
+data/*
+# artifacts/* (а не artifacts/) — по той же причине: рантайм-файлы ниже
+# нужны в чистом клоне, без них docker compose up не соберётся.
+artifacts/*
+!artifacts/index.npz
+!artifacts/geometric_sift.npz
+!artifacts/models/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+*.egg-info/
+
+# фикстура нужна в репозитории — на ней гоняются тесты
+!data/catalog_sample.csv
+!data/catalog.csv
+# превью фото для карточек UI: исходники (2,1 ГБ) в репозиторий не входят
+!data/catalog_thumbs/
+
+# Рабочие материалы, не код: решение сокомандника (6 ГБ), документы и
+# транскрипты кейса, логи разговоров. В открытом репозитории им не место.
+vino_unpacked/
+*.rar
+*.zip
+*.docx
+*.pdf
+conversation-*.md
+# план 19.09 — исторический, решения и цифры в README.md и ARCHITECTURE.md
+PLAN.md

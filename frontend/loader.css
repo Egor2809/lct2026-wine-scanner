@@ -1,0 +1,284 @@
+/* ═══════════════════════════════════════════════════════════════
+   Лоадер «evolve» — перенос boot-экрана с evolve-scripts.online
+
+   Сетка точек волной от центра → знак evolve рисуется пером и
+   заливается → буквы «evolve» → сегментный прогресс со строками
+   лога → шов по центру, экран разъезжается на две половины.
+
+   Отличие от оригинала — только цвета: фон — погреб сайта, акцент —
+   латунь вместо голубого, «ok» — приглушённый зелёный листа.
+   ═══════════════════════════════════════════════════════════════ */
+
+.boot {
+  --boot-base:     #2a1215;
+  --boot-accent:   #c9a96a;
+  --boot-accent-hi:#ead6a6;
+  --boot-glow:     rgba(201, 169, 106, .6);
+  --boot-ink:      #f1e7d3;
+  --boot-ink-3:    rgba(241, 231, 211, .6);
+  --boot-ink-4:    rgba(241, 231, 211, .42);
+  --boot-dot:      #e3d3b8;
+  --boot-line:     rgba(241, 231, 211, .14);
+  --boot-ok:       #a9bb8e;
+
+  --boot-quint: cubic-bezier(.22, 1, .36, 1);
+  --boot-quart: cubic-bezier(.76, 0, .24, 1);
+  --boot-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  overflow: hidden;
+  color: var(--boot-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.boot.is-leaving { pointer-events: none; }
+
+/* ── Полотно — две половины, на уходе разъезжаются ── */
+
+.boot__half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: var(--boot-base);
+  transition: translate .64s var(--boot-quart) .2s;
+}
+
+.boot__half--top    { top: 0; }
+.boot__half--bottom { bottom: 0; }
+
+.boot.is-leaving .boot__half--top    { translate: 0 -100%; }
+.boot.is-leaving .boot__half--bottom { translate: 0 100%; }
+
+.boot__seam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  translate: 0 -50%;
+  background: var(--boot-accent);
+  box-shadow: 0 0 16px 2px var(--boot-glow);
+  scale: 0 1;
+  transition: scale .26s var(--boot-quint), opacity .3s ease .52s;
+}
+
+.boot.is-leaving .boot__seam { scale: 1; opacity: 0; }
+
+/* ── Сцена ── */
+
+.boot__stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  transition: opacity .26s var(--boot-quint), scale .26s var(--boot-quint), filter .26s var(--boot-quint);
+}
+
+.boot.is-leaving .boot__stage { opacity: 0; filter: blur(6px); scale: .96; }
+
+.boot__emblem {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 220px;
+}
+
+.boot__grid {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  grid-template-columns: repeat(31, 3px);
+  gap: 13px;
+}
+
+.boot__cell {
+  width: 3px;
+  height: 3px;
+  background: var(--boot-dot);
+  opacity: 0;
+  animation: boot-cell 1.4s var(--boot-quint) var(--d, 0s) both;
+}
+
+.boot__cell--accent { background: var(--boot-accent); }
+
+.boot__glow {
+  position: absolute;
+  width: 224px;
+  height: 224px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(201, 169, 106, .28), transparent);
+  animation: boot-glow 1.6s var(--boot-quint) 1.05s both;
+}
+
+/* Тёмное пятно под знаком — отделяет его от сетки */
+.boot__shade {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  background: var(--boot-base);
+  filter: blur(18px);
+}
+
+.boot__mark { position: relative; width: 92px; color: var(--boot-accent); }
+
+.boot__trace {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1px;
+  fill-opacity: 0;
+  animation:
+    boot-draw 1s var(--boot-quart) .15s forwards,
+    boot-fill .42s var(--boot-quint) 1.05s forwards;
+}
+
+.boot__word {
+  margin-top: 8px;
+  font-family: "Doto", var(--boot-mono);
+  font-size: clamp(44px, 8vw, 68px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.02em;
+  color: var(--boot-ink);
+}
+
+.boot__letter {
+  display: inline-block;
+  animation: boot-rise .56s var(--boot-quint) var(--d, 0s) both;
+}
+
+/* ── Прогресс ── */
+
+.boot__progress { width: 100%; max-width: 440px; margin-top: 40px; }
+
+.boot__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.boot__label {
+  font-family: var(--text, system-ui, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+.boot__count {
+  color: var(--boot-ink-3);
+  font-variant-numeric: tabular-nums;
+  transition: color .3s;
+}
+
+.boot__count.is-ready { color: var(--boot-accent); }
+.boot__version { color: var(--boot-ink-4); }
+
+.boot__bar { display: flex; gap: 4px; height: 3px; }
+.boot__bar.is-ready { animation: boot-ready .7s var(--boot-quint) both; }
+
+.boot__seg {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  background: var(--boot-line);
+}
+
+.boot__seg.is-done {
+  background: var(--boot-accent);
+  animation: boot-seg .36s var(--boot-quint) both;
+}
+
+.boot__seg.is-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(201, 169, 106, .55), transparent);
+  animation: boot-scan .7s linear infinite;
+}
+
+.boot__log {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 24px;
+  margin-top: 12px;
+  overflow: hidden;
+  font-family: var(--boot-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--boot-ink-3);
+}
+
+.boot__line {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+  animation: boot-swap .34s var(--boot-quint) both;
+}
+
+.boot__n  { color: var(--boot-ink-4); }
+.boot__ok { color: var(--boot-ok); }
+.boot__ok--err { color: #e0a3a7; }
+.boot__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.boot__hint {
+  position: absolute;
+  bottom: 32px;
+  color: var(--boot-ink-4);
+  animation: boot-fade .4s ease-out .9s both;
+}
+
+/* ── Ключевые кадры (как в оригинале) ── */
+
+@keyframes boot-cell {
+  0%  { opacity: 0; scale: .2; }
+  30% { opacity: var(--peak, .9); scale: 1.25; }
+  to  { opacity: var(--rest, .12); scale: 1; }
+}
+
+@keyframes boot-draw { to { stroke-dashoffset: 0; } }
+@keyframes boot-fill { to { fill-opacity: 1; stroke-opacity: 0; } }
+
+@keyframes boot-glow {
+  0%  { opacity: 0; scale: .5; }
+  35% { opacity: 1; }
+  to  { opacity: .35; scale: 1; }
+}
+
+@keyframes boot-rise {
+  0% { opacity: 0; filter: blur(4px); transform: translateY(12px); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+@keyframes boot-seg {
+  0% { background: var(--boot-accent-hi); box-shadow: 0 0 10px 1px rgba(201, 169, 106, .7); }
+  to { background: var(--boot-accent); box-shadow: none; }
+}
+
+@keyframes boot-ready {
+  0% { filter: brightness(1.6); box-shadow: 0 0 18px 2px rgba(201, 169, 106, .6); }
+  to { filter: none; box-shadow: none; }
+}
+
+@keyframes boot-scan {
+  0% { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes boot-swap {
+  0% { opacity: 0; filter: blur(4px); transform: translateY(.35em); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+
+@keyframes boot-fade { from { opacity: 0; } to { opacity: 1; } }

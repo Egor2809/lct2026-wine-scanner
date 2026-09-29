@@ -1,0 +1,25 @@
+[project]
+name = "wine-scanner"
+version = "0.1.0"
+description = "Сканер российских вин для платформы «Своё вино» (ЛЦТ-2026, кейс №10 РСХБ)"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# B008 — стандартная идиома FastAPI: File()/Depends() в значении по умолчанию.
+"src/wine_scanner/api/app.py" = ["B008"]
+# Табличные фикстуры каталога читабельнее одной строкой на позицию.
+"tests/*" = ["E501"]
+# Отчётные print() стенда оценки — таблицы, их не переносят.
+"scripts/*" = ["E501"]

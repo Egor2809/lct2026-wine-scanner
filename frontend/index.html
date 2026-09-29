@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fefdfa">
+<meta name="description" content="Сканер этикеток: фото бутылки — карточка вина из каталога «Своё Вино».">
+<title>Сканер вин — Своё Вино</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%235a262b'/%3E%3Cpath d='M12 5h8v13c0 4 5 6 5 11v3H7v-3c0-5 5-7 5-11V5Z' fill='%23fdf9ed'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Onest:wght@400;500&family=Doto:wght@700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  /* Полотно до того, как loader.js построит лоадер: без него мелькнула бы страница */
+  #page-loader:empty { position: fixed; inset: 0; z-index: 99999; background: #2a1215; }
+  body.loading { overflow: hidden; }
+  .boot-skip #page-loader { display: none; }
+  .boot-skip body.loading { overflow: visible; }
+</style>
+
+<!-- Лоадер — при каждой загрузке, кроме «уменьшить движение». Решается до
+     первой отрисовки, иначе полотно успело бы мигнуть. -->
+<script>
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.documentElement.classList.add("boot-skip");
+  }
+</script>
+
+<!-- Страховка: если loader.js не загрузился или упал, полотно снимается само. -->
+<script>
+  setTimeout(function () {
+    var l = document.getElementById("page-loader");
+    if (l) l.remove();
+    document.body && document.body.classList.remove("loading");
+  }, 6000);
+</script>
+
+<link rel="stylesheet" href="loader.css?v=20260926i">
+<link rel="stylesheet" href="styles.css?v=20260927a">
+</head>
+<body class="loading">
+
+<div id="page-loader" aria-hidden="true"></div>
+
+<div class="frame">
+
+  <header class="masthead">
+    <a class="masthead__brand" href="#/scan">
+      <span class="masthead__mark" aria-hidden="true"></span>
+      <span class="masthead__name">Своё&nbsp;Вино</span>
+    </a>
+    <div class="masthead__section" id="section-label">Сканер</div>
+  </header>
+
+  <main class="app" id="app">
+
+    <section class="page" data-page="scan">
+      <div class="stage" id="stage" data-state="idle">
+        <p class="visually-hidden" id="scan-live" aria-live="polite"></p>
+
+        <div class="view view--idle" data-view="idle">
+          <!-- Ниша с бутылкой и рамкой видоискателя вокруг этикетки -->
+          <div class="vitrine" aria-hidden="true">
+            <svg class="vitrine__bottle" viewBox="0 0 120 300" fill="none">
+              <path class="vitrine__line" pathLength="1"
+                    d="M49 8h22v84c0 20 21 30 21 54v134q0 8-8 8H36q-8 0-8-8V146c0-24 21-34 21-54V8Z"/>
+              <path class="vitrine__line vitrine__line--thin" pathLength="1" d="M48 58h24"/>
+              <path class="vitrine__line vitrine__line--thin" pathLength="1" d="M36 150v118"/>
+              <rect class="vitrine__line" pathLength="1" x="36" y="176" width="48" height="72" rx="1"/>
+              <rect class="vitrine__line vitrine__line--thin" pathLength="1" x="39.5" y="179.5" width="41" height="65"/>
+              <circle class="vitrine__line vitrine__line--thin" pathLength="1" cx="60" cy="196" r="6"/>
+              <path class="vitrine__line vitrine__line--thin" pathLength="1" d="M47 214h26M50 222h20M53 236h14"/>
+              <path class="vitrine__corner" d="M17 174v-12h12M91 162h12v12M103 250v12H91M29 262H17v-12"/>
+            </svg>
+          </div>
+
+          <div class="hero">
+            <p class="hero__eyebrow">Каталог российских вин<span id="catalog-total"></span></p>
+            <h1 class="hero__title">Наведите камеру<br>на этикетку</h1>
+          </div>
+
+          <div class="capture">
+            <button class="capture__primary" id="btn-camera" type="button">
+              <svg class="capture__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.3a1 1 0 0 0 .84-.46l.87-1.35A1 1 0 0 1 9.35 4h5.3a1 1 0 0 1 .84.46l.87 1.35a1 1 0 0 0 .84.46h1.3A2.5 2.5 0 0 1 21 8.5v9A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-9Z" stroke="currentColor" stroke-width="1.4"/>
+                <circle cx="12" cy="12.5" r="3.6" stroke="currentColor" stroke-width="1.4"/>
+              </svg>
+              <span>Сфотографировать</span>
+            </button>
+            <button class="capture__secondary" id="btn-gallery" type="button">или выбрать из галереи</button>
+            <input type="file" id="file-camera"  accept="image/*" capture="environment" hidden>
+            <input type="file" id="file-gallery" accept="image/*" hidden>
+          </div>
+
+          <p class="hints">Этикетка должна попасть в кадр целиком. Блики и наклон не мешают.</p>
+        </div>
+
+        <div class="view view--scanning" data-view="scanning">
+          <div class="scanner">
+            <div class="scanner__plate">
+              <img class="scanner__shot" id="scan-preview" alt="">
+              <div class="scanner__beam" aria-hidden="true"></div>
+              <div class="scanner__reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            </div>
+            <p class="scanner__status" id="scan-status" role="status">Распознаём этикетку</p>
+          </div>
+        </div>
+
+        <div class="view view--result" data-view="result">
+          <article class="card">
+            <div class="card__plate">
+              <div class="card__glow" aria-hidden="true"></div>
+              <img class="card__bottle" id="card-bottle" alt="">
+              <button class="like" id="card-like" type="button" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6.5 3.75h11a.75.75 0 0 1 .75.75v15.9a.4.4 0 0 1-.64.32L12 16.6l-5.61 4.12a.4.4 0 0 1-.64-.32V4.5a.75.75 0 0 1 .75-.75Z"
+                        fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+                <span class="visually-hidden" id="card-like-label">В избранное</span>
+              </button>
+            </div>
+
+            <div class="card__body">
+              <p class="card__eyebrow" id="card-eyebrow"></p>
+              <h2 class="card__title" id="card-title" tabindex="-1"></h2>
+              <p class="card__byline" id="card-byline">Винодельня <button class="card__winery" id="card-winery" type="button"></button></p>
+
+              <dl class="specs" id="card-specs"></dl>
+
+              <p class="rating" id="card-rating" hidden>
+                <span class="rating__value" id="rating-value"></span>
+                <span class="rating__label">Рейтинг Роскачества <span class="rating__demo">демо-значение</span></span>
+              </p>
+
+              <p class="card__note" id="card-note"></p>
+
+              <div class="pairing" id="card-pairing" hidden>
+                <p class="pairing__label">Подавайте с</p>
+                <ul class="pairing__list" id="pairing-list"></ul>
+                <p class="pairing__note" id="pairing-note" hidden></p>
+              </div>
+
+              <div class="card__actions">
+                <a class="card__link" id="card-link" href="#" target="_blank" rel="noopener">
+                  На портале
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M3 13 13 3M13 3H6M13 3v7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <section class="analogs" id="card-analogs">
+            <div class="analogs__head">
+              <h3 class="analogs__title">Похожие вина других виноделен</h3>
+              <p class="analogs__sub">Подбор по сорту, стилю, сахару и региону — по одному вину от хозяйства</p>
+            </div>
+            <div class="analogs__rail" id="analogs-rail"></div>
+          </section>
+
+          <button class="restart" data-restart type="button">Сканировать другое</button>
+        </div>
+
+        <div class="view view--choice" data-view="choice">
+          <div class="notice">
+            <p class="notice__eyebrow">Точного совпадения нет</p>
+            <h2 class="notice__title" id="choice-title" tabindex="-1">Возможно, одно из них</h2>
+            <p class="notice__text">Если вашего вина нет в списке, его пока нет в каталоге.</p>
+          </div>
+          <ul class="choices" id="choices"></ul>
+          <section class="analogs" id="choice-analogs">
+            <div class="analogs__head">
+              <h3 class="analogs__title">Похожие вина других виноделен</h3>
+              <p class="analogs__sub" id="choice-analogs-sub" hidden></p>
+            </div>
+            <div class="analogs__rail" id="choice-rail"></div>
+          </section>
+          <button class="restart" data-restart type="button">Снять заново</button>
+        </div>
+
+        <div class="view view--empty" data-view="error">
+          <div class="notice notice--empty">
+            <span class="notice__glyph" aria-hidden="true">!</span>
+            <p class="notice__eyebrow" id="error-eyebrow">Ошибка</p>
+            <h2 class="notice__title" id="error-title" tabindex="-1">Не удалось распознать</h2>
+            <p class="notice__text" id="error-text"></p>
+          </div>
+          <button class="capture__primary" id="error-retry" type="button">Повторить</button>
+          <button class="restart" data-restart type="button">Снять заново</button>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="page" data-page="catalog">
+      <div class="section-head">
+        <h1 class="section-head__title">Каталог</h1>
+      </div>
+
+      <label class="search">
+        <span class="visually-hidden">Поиск по каталогу</span>
+        <svg class="search__icon" width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="8.75" cy="8.75" r="5.75" stroke="currentColor" stroke-width="1.5"/>
+          <path d="m13 13 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input class="field__input" id="catalog-q" type="search" inputmode="search" autocomplete="off"
+               placeholder="Название, винодельня или сорт">
+      </label>
+
+      <div class="filters" id="catalog-styles" role="toolbar" aria-label="Стиль"></div>
+      <div class="filters" id="catalog-regions" role="toolbar" aria-label="Регион"></div>
+
+      <div class="grid" id="catalog-grid"></div>
+      <p class="list-empty" id="catalog-empty" hidden>Ничего не нашлось. Попробуйте другое слово.</p>
+      <button class="capture__secondary more" id="catalog-more" type="button" hidden>Показать ещё</button>
+    </section>
+
+    <section class="page" data-page="sommelier">
+      <div class="section-head">
+        <h1 class="section-head__title">Сомелье</h1>
+        <p class="section-head__count" id="somm-step"></p>
+      </div>
+
+      <div class="somm" id="somm">
+        <div class="somm__dialog" id="somm-dialog"></div>
+        <button class="restart" id="somm-reset" type="button" hidden>Подобрать заново</button>
+      </div>
+    </section>
+
+    <section class="page" data-page="winery">
+      <button class="backlink" data-back type="button">
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M10 13 5 8l5-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Назад
+      </button>
+
+      <div class="winery">
+        <p class="winery__region" id="winery-region"></p>
+        <h1 class="winery__name" id="winery-name"></h1>
+        <dl class="specs" id="winery-specs"></dl>
+        <h3 class="analogs__title winery__list-title">Вина хозяйства в каталоге</h3>
+        <div class="grid" id="winery-grid"></div>
+        <button class="capture__secondary more" id="winery-more" type="button" hidden>Показать ещё</button>
+      </div>
+    </section>
+
+    <section class="page" data-page="saved">
+      <div class="section-head">
+        <h1 class="section-head__title">Мои вина</h1>
+      </div>
+
+      <section class="analogs analogs--bare">
+        <div class="analogs__head">
+          <h3 class="analogs__title">Избранное</h3>
+          <p class="analogs__sub" id="liked-empty" hidden>Отмечайте вина закладкой на карточке</p>
+        </div>
+        <div class="analogs__rail" id="liked-rail"></div>
+      </section>
+
+      <section class="analogs">
+        <div class="analogs__head">
+          <h3 class="analogs__title">Недавно смотрели</h3>
+          <p class="analogs__sub" id="history-empty" hidden>Пока пусто</p>
+        </div>
+        <div class="analogs__rail" id="history-rail"></div>
+      </section>
+
+      <p class="list-empty">Хранится только на этом устройстве.</p>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" id="tabbar">
+    <a class="tab" href="#/scan" data-tab="scan">Сканер</a>
+    <a class="tab" href="#/catalog" data-tab="catalog">Каталог</a>
+    <a class="tab" href="#/sommelier" data-tab="sommelier">Сомелье</a>
+    <a class="tab" href="#/saved" data-tab="saved">Мои вина</a>
+  </nav>
+
+</div>
+
+<script src="loader.js?v=20260926i"></script>
+<script src="app.js?v=20260927a"></script>
+</body>
+</html>

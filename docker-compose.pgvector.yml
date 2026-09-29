@@ -1,0 +1,30 @@
+# Стек заказчика из ТЗ: индекс в PostgreSQL + pgvector вместо npz в памяти.
+#   docker compose -f docker-compose.yml -f docker-compose.pgvector.yml up -d --build
+# На первом старте сервис переносит artifacts/index.npz в таблицу wine_vectors
+# (~5 с) и дальше ищет через HNSW; /health показывает "index": "pgvector".
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: wine
+      POSTGRES_PASSWORD: wine
+      POSTGRES_DB: wine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wine -d wine"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  scanner:
+    environment:
+      INDEX_KIND: pgvector
+      PGVECTOR_DSN: postgresql://wine:wine@db:5432/wine
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
